@@ -67,15 +67,14 @@ export const signin = async (event) => {
         }
 
         const params = {
-            AuthFlow: "ADMIN_USER_PASSWORD_AUTH", // Ensuring correct auth flow
-            UserPoolId: USER_POOL_ID, // Required for AdminInitiateAuth
-            ClientId: USER_POOL_CLIENT_ID,
+            AuthFlow: "USER_PASSWORD_AUTH",
+            ClientId: COGNITO_CLIENT_ID, // Use correct client ID
             AuthParameters: {
                 USERNAME: email,
-                PASSWORD: password,
-                SECRET_HASH: generateSignature(email) // Ensuring correct signature
+                PASSWORD: password
             }
         };
+;
 
         console.log("Authenticating user:", email);
         const response = await cognito.adminInitiateAuth(params).promise();

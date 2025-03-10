@@ -27,7 +27,9 @@
             "cognito-idp:AdminRespondToAuthChallenge",
             "cognito-idp:AdminConfirmSignUp",
             "cognito-idp:InitiateAuth",
-            "cognito-idp:RespondToAuthChallenge"
+            "cognito-idp:RespondToAuthChallenge",
+            "cognito-idp:InitiateAuth",
+            "cognito-idp:AdminInitiateAuth"
           ],
           "Effect": "Allow",
           "Resource": "*"
