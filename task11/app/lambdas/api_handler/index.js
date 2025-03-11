@@ -1,10 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
 import AWS from "aws-sdk";
+
 const { CognitoIdentityServiceProvider, DynamoDB } = AWS;
-const cognito = new AWS.CognitoIdentityServiceProvider({
-                    region: process.env.REGION
-                });
+AWS.config.update({ region: process.env.REGION });
+const cognito = new CognitoIdentityServiceProvider();
 const dynamoDb = new DynamoDB.DocumentClient();
+
 const TABLES_TABLE = process.env.TABLES_TABLE;
 const RESERVATIONS_TABLE = process.env.RESERVATIONS_TABLE;
 const USER_POOL_ID = process.env.cup_id;
@@ -55,33 +56,44 @@ export const signup = async (event) => {
  * Signin Handler
  */
 export const signin = async (event) => {
+    console.log("Signin request received:", event);
+
     try {
         const { email, password } = JSON.parse(event.body);
+
+        if (!email || !password) {
+            console.warn("Signin failed: Missing email or password");
+            return formatResponse(400, { error: "Email and password are required." });
+        }
+
         const params = {
-            AuthFlow: 'ADMIN_USER_PASSWORD_AUTH',
-                    UserPoolId: USER_POOL_ID,
-                    ClientId:COGNITO_CLIENT_ID,
-                    AuthParameters: {
-                        USERNAME: email,
-                        PASSWORD: password
-                    }
+            AuthFlow: "USER_PASSWORD_AUTH",
+            ClientId: COGNITO_CLIENT_ID, // Use correct client ID
+            AuthParameters: {
+                USERNAME: email,
+                PASSWORD: password
+            }
         };
-        const data = await cognito.adminInitiateAuth(params).promise();
-                const idToken = data.AuthenticationResult.IdToken;
-                return {
-                    statusCode: 200,
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ idToken: idToken })
-                };
+;
+
+        console.log("Authenticating user:", email);
+        const response = await cognito.adminInitiateAuth(params).promise();
+
+        console.log("Signin successful for user:", email);
+        return formatResponse(200, {
+            accessToken: response.AuthenticationResult.IdToken // Correct token response
+        });
     } catch (error) {
-              console.error(error);
-              return {
-                  statusCode: 500,
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ error: "Authentication failed", details: error.message })
-              };
-          }
+        console.error("Sign-in error:", error);
+
+        if (error.code === "NotAuthorizedException" || error.code === "UserNotFoundException") {
+            return formatResponse(400, { error: "Invalid email or password." });
+        }
+
+        return formatResponse(502, { error: "Signin failed due to server error." });
+    }
 };
+
 
 /**
  * Get Tables Handler
